@@ -4,10 +4,24 @@ const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
+const cors = require('koa2-cors')
 
 const playlistRouter = require('./routes/playlist')
 const blogRouter = require('./routes/blog')
-const swipeRouter = require('./routes/swipe')
+const swipeRouter = require('./routes/swiper')
+
+const ENV = 'face-music-test-cor7k'
+
+// 解决跨域问题
+app.use(cors({
+    origin: ['http://localhost:9528'],
+    credentials: true
+}))
+
+app.use(async(ctx, next) => {
+    ctx.state.env = ENV
+    await next()
+})
 
 // error handler
 onerror(app)

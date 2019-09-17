@@ -1,29 +1,59 @@
 const router = require('koa-router')()
 const rp = require('request-promise')
-const getAccessToken = require('../utils/getAccessToken')
-const ENV = 'face-music-test-cor7k'
+const callCloudFn = require('../utils/callCloudFn')
+const callCloudDB = require('../utils/callCloudDB')
 
-router.get('/playlist', async(ctx, next) => {
-    const ACCESS_TOKEN = await getAccessToken()
-    const fnName = 'music'
-    const URL = `https://api.weixin.qq.com/tcb/invokecloudfunction?access_token=${ACCESS_TOKEN}&env=${ENV}&name=${fnName}`
-    const options = {
-        method: 'post',
-        url: URL,
-        json: true,
-        body: {
-            $url: 'playlist',
-            start: 0,
-            count: 50
-        }
-    }
-
-    await rp(options).then(res => {
-        ctx.body = JSON.parse(res.resp_data).data
-    }).catch(err => {
-        throw err
+router.get('/playlist/list', async(ctx, next) => {
+    const query = ctx.request.query
+    const res = await callCloudFn(ctx, 'music', {
+        $url: 'playlist',
+        start: parseInt(query.start),
+        count: parseInt(query.count)
     })
+    let data = []
+    if (res.resp_data) {
+        data = JSON.parse(res.resp_data).data
+    }
+    ctx.body = {
+        data,
+        code: 20000,
+    }
+})
 
+router.get('/playlist/getById', async(ctx, next) => {
+    const query = `db.collection('playlist').doc('${ctx.request.query.id}').get()`
+    const res = await callCloudDB(ctx, 'databasequery', query)
+    ctx.body = {
+        code: 20000,
+        data: JSON.parse(res.data)
+    }
+})
+
+router.post('/playlist/updatePlaylist', async(ctx, next) => {
+    const params = ctx.request.body
+    const query = `
+        db.collection('playlist').doc('${params._id}').update({
+            data: {
+                name: '${params.name}',
+                copywriter: '${params.copywriter}'
+            }
+        })
+    `
+    const res = await callCloudDB(ctx, 'databaseupdate', query)
+    ctx.body = {
+        code: 20000,
+        data: res
+    }
+})
+
+router.get('/playlist/del', async(ctx, next) => {
+    const params = ctx.request.query
+    const query = `db.collection('playlist').doc('${params.id}').remove()`
+    const res = await callCloudDB(ctx, 'databasedelete', query)
+    ctx.body = {
+        code: 20000,
+        data: res
+    }
 })
 
 module.exports = router
