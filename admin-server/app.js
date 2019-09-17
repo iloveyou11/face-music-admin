@@ -5,12 +5,18 @@ const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 const cors = require('koa2-cors')
+const koaBody = require('koa-body')
 
 const playlistRouter = require('./routes/playlist')
 const blogRouter = require('./routes/blog')
 const swipeRouter = require('./routes/swiper')
 
 const ENV = 'face-music-test-cor7k'
+
+// 接收post参数解析
+app.use(koaBody({
+    multipart: true,
+}))
 
 // 解决跨域问题
 app.use(cors({
